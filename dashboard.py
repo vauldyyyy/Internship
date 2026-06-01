@@ -245,7 +245,7 @@ def executive_overview(data):
     )
     
     st.dataframe(
-        top_companies[[' company_name', 'sector', 'roe_pct_3y', 'opm_pct', 'sales']].rename(columns={
+        top_companies[['company_name', 'sector', 'roe_pct_3y', 'opm_pct', 'sales']].rename(columns={
             'company_name': 'Company',
             'sector': 'Sector',
             'roe_pct_3y': 'ROE %',
