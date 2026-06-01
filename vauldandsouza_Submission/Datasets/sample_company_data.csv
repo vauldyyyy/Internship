@@ -1,0 +1,31 @@
+symbol,company_name,sector,market_cap_billions,founded_year
+TCS,Tata Consultancy Services,IT,1500,1998
+INFY,Infosys Limited,IT,1400,1981
+HDFC,HDFC Bank Limited,Finance,1200,1994
+RELIANCE,Reliance Industries Limited,Energy,2000,1957
+ITC,ITC Limited,Diversified,500,1910
+HCLTECH,HCL Technologies Limited,IT,450,1976
+WIPRO,Wipro Limited,IT,850,1980
+BAJAJFINSV,Bajaj Finserv Limited,Finance,280,2005
+MARUTI,Maruti Suzuki India Limited,Automotive,350,1981
+SUNPHARMA,Sun Pharmaceutical Industries,Pharma,400,1983
+AXISBANK,Axis Bank Limited,Finance,900,1994
+ICICIBANK,ICICI Bank Limited,Finance,850,1994
+KOTAKBANK,Kotak Mahindra Bank Limited,Finance,650,1985
+BAJAJFINSV,Bajaj Finance Limited,Finance,500,2007
+SBIN,State Bank of India,Finance,750,1955
+ADANIPOWER,Adani Power Limited,Energy,300,2009
+POWERGRID,Power Grid Corporation,Energy,280,1992
+BHARTIARTL,Bharti Airtel Limited,Telecom,380,1995
+TITAN,Titan Company Limited,Consumer,450,1984
+NESTLEIND,Nestle India Limited,Consumer,850,1959
+HINDUSTAN,Hindustan Unilever Limited,Consumer,520,1956
+COLPAL,Colgate-Palmolive (India),Consumer,280,1937
+BOSCHIND,Bosch Limited,Automotive,280,1956
+BAJAJFINSV,Bajaj Auto Limited,Automotive,380,1945
+HEROMOTOCO,Hero MotoCorp Limited,Automotive,450,1956
+SBILIFE,SBI Life Insurance,Finance,400,2001
+HDFCLIFE,HDFC Life Insurance,Finance,350,2000
+ICICIPRU,ICICI Prudential Life,Finance,300,2000
+LTTS,L&T Technology Services,IT,280,2006
+MINDTREE,Mindtree Limited,IT,350,1999

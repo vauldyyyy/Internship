@@ -1,0 +1,159 @@
+============================================
+DAX MEASURES LIBRARY FOR POWER BI DASHBOARDS
+============================================
+
+Created for: Nifty 100 Financial Intelligence System
+Date: June 2, 2026
+Author: vauldandsouza
+
+============================================
+CORE FINANCIAL MEASURES
+============================================
+
+1. ROE Last Year
+   = CALCULATE(
+       AVERAGE(fact_profit_loss[roe_pct_3y]),
+       FILTER(ALL(dim_year), dim_year[year_id] = MAX(dim_year[year_id]))
+     )
+
+2. 3Y Sales CAGR
+   = VAR MaxYear = MAX(dim_year[year_id])
+     VAR MinYear = MaxYear - 2
+     VAR StartSales = CALCULATE(
+       SUM(fact_profit_loss[sales]),
+       FILTER(ALL(dim_year), dim_year[year_id] = MinYear)
+     )
+     VAR EndSales = CALCULATE(
+       SUM(fact_profit_loss[sales]),
+       FILTER(ALL(dim_year), dim_year[year_id] = MaxYear)
+     )
+     RETURN
+       POWER(DIVIDE(EndSales, StartSales), 1/3) - 1
+
+3. Average OPM%
+   = AVERAGE(fact_profit_loss[opm_pct])
+
+4. Average ROE %
+   = AVERAGE(fact_profit_loss[roe_pct_3y])
+
+5. Debt to Equity Ratio
+   = DIVIDE(
+       SUM(fact_balance_sheet[total_debt]),
+       SUM(fact_balance_sheet[equity]),
+       0
+     )
+
+6. Net Profit Trend
+   = SUM(fact_profit_loss[net_profit])
+
+============================================
+SCORING & HEALTH MEASURES
+============================================
+
+7. Overall Health Score
+   = AVERAGE(fact_ml_scores[overall_score])
+
+8. Companies Excellent Health (Score >= 85)
+   = COUNTROWS(
+       FILTER(fact_ml_scores, fact_ml_scores[overall_score] >= 85)
+     )
+
+9. Companies Weak Health (Score < 50)
+   = COUNTROWS(
+       FILTER(fact_ml_scores, fact_ml_scores[overall_score] < 50)
+     )
+
+10. Health Distribution
+    = SWITCH(
+        VALUES(dim_health_label[label_name]),
+        "Excellent", [Companies Excellent Health],
+        "Good", COUNTROWS(FILTER(fact_ml_scores, fact_ml_scores[overall_score] >= 70)),
+        "Average", COUNTROWS(FILTER(fact_ml_scores, fact_ml_scores[overall_score] >= 50)),
+        "Weak", [Companies Weak Health],
+        BLANK()
+      )
+
+============================================
+AGGREGATION MEASURES
+============================================
+
+11. Total Companies Count
+    = DISTINCTCOUNT(dim_company[symbol])
+
+12. Total Revenue
+    = SUM(fact_profit_loss[sales])
+
+13. Total Net Profit
+    = SUM(fact_profit_loss[net_profit])
+
+14. Average Growth Rate
+    = AVERAGE(fact_profit_loss[sales_growth_3y])
+
+============================================
+SECTOR MEASURES
+============================================
+
+15. Sector Average OPM
+    = CALCULATE(
+        AVERAGE(fact_profit_loss[opm_pct]),
+        ALLEXCEPT(fact_profit_loss, dim_sector[sector_name])
+      )
+
+16. Sector Total Revenue
+    = CALCULATE(
+        SUM(fact_profit_loss[sales]),
+        ALLEXCEPT(fact_profit_loss, dim_sector[sector_name])
+      )
+
+17. Sector Company Count
+    = DISTINCTCOUNT(dim_company[symbol])
+
+============================================
+CASH FLOW MEASURES
+============================================
+
+18. Operating Cash Flow
+    = SUM(fact_cash_flow[operating_cf])
+
+19. Free Cash Flow
+    = SUM(fact_cash_flow[free_cf])
+
+20. Cash Conversion Ratio
+    = DIVIDE(
+        SUM(fact_cash_flow[operating_cf]),
+        SUM(fact_profit_loss[net_profit]),
+        0
+      )
+
+============================================
+ADVANCED ANALYTICS
+============================================
+
+21. ML Model Score
+    = AVERAGE(fact_ml_scores[overall_score])
+
+22. Pros Count
+    = COUNTA(fact_pros_cons[pros_text])
+
+23. Cons Count
+    = COUNTA(fact_pros_cons[cons_text])
+
+============================================
+RANKING MEASURES
+============================================
+
+24. Top Company by ROE
+    = MAXX(
+        TOPN(1, dim_company, [ROE Last Year], DESC),
+        dim_company[company_name]
+      )
+
+25. Bottom Company by Growth
+    = MINX(
+        TOPN(10, dim_company, [3Y Sales CAGR], ASC),
+        dim_company[company_name]
+      )
+
+============================================
+END OF DAX MEASURES LIBRARY
+============================================
