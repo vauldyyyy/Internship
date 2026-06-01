@@ -270,26 +270,35 @@ def company_deep_dive(data):
             data['companies'].sort_values('company_name')['company_name'].values
         )
     
-    symbol = data['companies'][data['companies']['company_name'] == selected_company]['symbol'].values[0]
+    # Get symbol using proper indexing
+    symbol_mask = data['companies']['company_name'] == selected_company
+    symbol = data['companies'][symbol_mask]['symbol'].values[0]
     company_info = data['companies'][data['companies']['symbol'] == symbol].iloc[0]
     
     # Get company data
     company_pl = data['profit_loss'][data['profit_loss']['symbol'] == symbol].sort_values('year_id')
     company_bs = data['balance_sheet'][data['balance_sheet']['symbol'] == symbol]
     company_cf = data['cash_flow'][data['cash_flow']['symbol'] == symbol]
-    company_health = data['ml_scores'][data['ml_scores']['symbol'] == symbol].iloc[0]
-    company_pros_cons = data['pros_cons'][data['pros_cons']['symbol'] == symbol].iloc[0] if len(data['pros_cons'][data['pros_cons']['symbol'] == symbol]) > 0 else None
+    
+    health_mask = data['ml_scores']['symbol'] == symbol
+    company_health = data['ml_scores'][health_mask].iloc[0] if health_mask.any() else None
+    
+    pros_cons_mask = data['pros_cons']['symbol'] == symbol
+    company_pros_cons = data['pros_cons'][pros_cons_mask].iloc[0] if pros_cons_mask.any() else None
     
     with col2:
-        health_score = company_health['overall_score']
-        health_color = get_health_color(health_score)
-        st.markdown(f"""
-        <div style="background-color: {health_color}; padding: 20px; border-radius: 10px; text-align: center; color: white;">
-            <h3>Health Score</h3>
-            <h1>{health_score:.0f}/100</h1>
-            <p>{get_health_label(health_score)}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        if company_health is not None:
+            health_score = company_health['overall_score']
+            health_color = get_health_color(health_score)
+            st.markdown(f"""
+            <div style="background-color: {health_color}; padding: 20px; border-radius: 10px; text-align: center; color: white;">
+                <h3>Health Score</h3>
+                <h1>{health_score:.0f}/100</h1>
+                <p>{get_health_label(health_score)}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.warning("No health score data available for this company")
     
     st.divider()
     
@@ -340,7 +349,7 @@ def company_deep_dive(data):
     st.divider()
     
     # Pros and Cons
-    if company_pros_cons:
+    if company_pros_cons is not None:
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("✅ Strengths")
@@ -348,6 +357,8 @@ def company_deep_dive(data):
         with col2:
             st.subheader("⚠️ Risks")
             st.write(company_pros_cons['cons_text'])
+    else:
+        st.info("No pros/cons analysis available for this company")
     
     # Financial Data Table
     st.subheader("📊 5-Year Financial Summary")
