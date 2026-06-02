@@ -9,9 +9,6 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
-import numpy as np
 
 # ============== PAGE CONFIG ==============
 st.set_page_config(
@@ -193,7 +190,6 @@ def executive_overview(data):
             'Average': '#FBBF24',
             'Weak': '#EF4444'
         }
-        colors = [colors_map.get(label, '#gray') for label in health_dist.index]
         
         fig2 = px.pie(
             values=health_dist.values,
@@ -273,7 +269,6 @@ def company_deep_dive(data):
     # Get symbol using proper indexing
     symbol_mask = data['companies']['company_name'] == selected_company
     symbol = data['companies'][symbol_mask]['symbol'].values[0]
-    company_info = data['companies'][data['companies']['symbol'] == symbol].iloc[0]
     
     # Get company data
     company_pl = data['profit_loss'][data['profit_loss']['symbol'] == symbol].sort_values('year_id')
@@ -353,12 +348,18 @@ def company_deep_dive(data):
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("✅ Strengths")
-            st.write(company_pros_cons['pros_text'])
+            pros_list = [p.strip() for p in str(company_pros_cons['pros_text']).split(',') if p.strip()]
+            for point in pros_list:
+                st.markdown(f"- {point}")
         with col2:
             st.subheader("⚠️ Risks")
-            st.write(company_pros_cons['cons_text'])
+            cons_list = [c.strip() for c in str(company_pros_cons['cons_text']).split(',') if c.strip()]
+            for point in cons_list:
+                st.markdown(f"- {point}")
     else:
-        st.info("No pros/cons analysis available for this company")
+        st.info("No strengths/risks analysis available for this company")
+    
+    st.divider()
     
     # Financial Data Table
     st.subheader("📊 5-Year Financial Summary")
@@ -375,6 +376,73 @@ def company_deep_dive(data):
         })
         
         st.dataframe(summary_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No P&L data available for this company.")
+    
+    st.divider()
+    
+    # Balance Sheet Summary
+    st.subheader("🏦 Balance Sheet Overview")
+    
+    if len(company_bs) > 0:
+        bs_merged = company_bs.merge(data['years'], on='year_id').sort_values('year_value')
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig_bs = px.bar(
+                bs_merged,
+                x='year_value',
+                y=['total_assets', 'equity', 'total_debt'],
+                barmode='group',
+                title=f'{selected_company} - Balance Sheet Trend',
+                labels={'year_value': 'Year', 'value': 'Amount (₹ Cr)', 'variable': 'Metric'}
+            )
+            fig_bs.update_layout(height=350)
+            st.plotly_chart(fig_bs, use_container_width=True)
+        
+        with col2:
+            bs_summary = bs_merged[['year_value', 'total_assets', 'total_debt', 'equity']].rename(columns={
+                'year_value': 'Year',
+                'total_assets': 'Total Assets (₹Cr)',
+                'total_debt': 'Total Debt (₹Cr)',
+                'equity': 'Equity (₹Cr)'
+            })
+            st.dataframe(bs_summary, use_container_width=True, hide_index=True)
+    else:
+        st.info("No balance sheet data available for this company.")
+    
+    st.divider()
+    
+    # Cash Flow Summary
+    st.subheader("💸 Cash Flow Summary")
+    
+    if len(company_cf) > 0:
+        cf_merged = company_cf.merge(data['years'], on='year_id').sort_values('year_value')
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig_cf = px.bar(
+                cf_merged,
+                x='year_value',
+                y=['operating_cf', 'investing_cf', 'financing_cf'],
+                barmode='group',
+                title=f'{selected_company} - Cash Flow Trend',
+                labels={'year_value': 'Year', 'value': 'Amount (₹ Cr)', 'variable': 'CF Type'}
+            )
+            fig_cf.update_layout(height=350)
+            st.plotly_chart(fig_cf, use_container_width=True)
+        
+        with col2:
+            cf_summary = cf_merged[['year_value', 'operating_cf', 'free_cf']].rename(columns={
+                'year_value': 'Year',
+                'operating_cf': 'Operating CF (₹Cr)',
+                'free_cf': 'Free CF (₹Cr)'
+            })
+            st.dataframe(cf_summary, use_container_width=True, hide_index=True)
+    else:
+        st.info("No cash flow data available for this company.")
 
 # ============== PAGE: SECTOR ANALYSIS ==============
 def sector_analysis(data):
@@ -393,6 +461,10 @@ def sector_analysis(data):
     # Filter data
     sector_companies = data['companies'][data['companies']['sector'].isin(selected_sectors)]['symbol'].values
     sector_pl = data['profit_loss'][data['profit_loss']['symbol'].isin(sector_companies)]
+    
+    if len(selected_sectors) == 0 or sector_pl.empty:
+        st.warning("Please select at least one sector with available P&L data.")
+        return
     
     st.divider()
     
@@ -444,24 +516,26 @@ def sector_analysis(data):
     # Sector Comparison Table
     st.subheader("📊 Sector Comparison Matrix")
     
-    comparison_df = (
-        sector_pl
-        .merge(data['companies'], on='symbol')
-        .groupby('sector')
-        .agg({
-            'sales': ['sum', 'mean'],
-            'net_profit': ['sum', 'mean'],
-            'roe_pct_3y': 'mean',
-            'opm_pct': 'mean',
-            'symbol': 'nunique'
-        })
-        .round(2)
-        .reset_index()
-    )
+    merged_sector = sector_pl.merge(data['companies'], on='symbol')
     
-    comparison_df.columns = ['Sector', 'Total Revenue', 'Avg Revenue', 'Total Profit', 'Avg Profit', 'Avg ROE %', 'Avg OPM %', 'Companies']
-    
-    st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+    if not merged_sector.empty:
+        comparison_df = (
+            merged_sector
+            .groupby('sector')
+            .agg({
+                'sales': ['sum', 'mean'],
+                'net_profit': ['sum', 'mean'],
+                'roe_pct_3y': 'mean',
+                'opm_pct': 'mean',
+                'symbol': 'nunique'
+            })
+            .round(2)
+            .reset_index()
+        )
+        comparison_df.columns = ['Sector', 'Total Revenue', 'Avg Revenue', 'Total Profit', 'Avg Profit', 'Avg ROE %', 'Avg OPM %', 'Companies']
+        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+    else:
+        st.info("No comparison data available for the selected sectors.")
 
 # ============== PAGE: ML INTELLIGENCE ==============
 def ml_intelligence(data):
